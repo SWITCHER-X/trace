@@ -29,9 +29,9 @@ pdf = ["PyPDF2>=3.0.0"]
 web = ["flask>=3.0.0"]
 
 [project.scripts]
-trace = "trace.cli:main"
-trace-web = "trace.web:main"
+trace = "tracemeta.cli:main"
+trace-web = "tracemeta.web:main"
 
 [tool.setuptools.packages.find]
 where = ["."]
-include = ["trace*"]
+include = ["tracemeta*"]

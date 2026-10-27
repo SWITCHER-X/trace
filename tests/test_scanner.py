@@ -12,8 +12,8 @@ from pathlib import Path
 # Add parent directory to path so we can import trace
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from trace.scanner import scan_file, _is_risky, _assess_risk, ScanResult
-from trace.scrubber import scrub_file
+from tracemeta.scanner import scan_file, _is_risky, _assess_risk, ScanResult
+from tracemeta.scrubber import scrub_file
 
 
 class TestScanner:
