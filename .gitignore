@@ -1,8 +1,72 @@
+# Security - never commit these
+.env
+.env.local
+.env.*.local
+*.key
+*.pem
+*.crt
+*.p12
+*.pfx
+secrets/
+config/secrets.yaml
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+*.so
+.pytest_cache/
+.coverage
+htmlcov/
+.tox/
+.mypy_cache/
+.ruff_cache/
+
+# Virtual environments
+venv/
+env/
+.env/
+.venv/
+trace-venv/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+logs/
+*.log.*
+
+# Test artifacts
 *.clean.jpg
 *.clean.pdf
 *.clean.mp4
 *.clean.png
-__pycache__/
-*.pyc
-.env
+*.clean.zip
+*.clean.mp3
+*.clean.wav
+*.clean.flac
+*.clean.m4a
+*.clean.ogg
+*.clean.txt
+*.clean.py
+
+# Temporary files
 *.tmp
+*.temp
+tmp/
+
+# Distribution
+dist/
+build/
+*.egg-info/
