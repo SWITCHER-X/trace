@@ -6,10 +6,45 @@ Strips metadata from files and creates clean copies.
 from __future__ import annotations
 
 import os
+import re
 import shutil
 import zipfile
 from pathlib import Path
 from typing import Any
+
+
+def _scrub_path(path: str, output_path: str | None = None) -> str:
+    """Resolve output_path to an absolute path."""
+    path = str(path)
+    if output_path is None:
+        stem = Path(path).stem
+        suffix = Path(path).suffix
+        output_path = f"{stem}_clean{suffix}"
+    return str(Path(output_path).resolve())
+
+
+def _scrub_mp3_manual(path: str) -> None:
+    """Remove ID3v2 tag from MP3 file."""
+    with open(path, "rb") as f:
+        header = f.read(10)
+        if header[:3] != b"ID3":
+            return
+        size = _read_syncsafe_int(f.read(4))
+        tag_size = 10 + size
+
+    with open(path, "rb") as f:
+        data = f.read()
+
+    with open(path, "wb") as f:
+        f.write(data[tag_size:])
+
+
+def _read_syncsafe_int(data: bytes) -> int:
+    """Read a 4-byte synchsafe integer."""
+    val = 0
+    for b in data:
+        val = (val << 7) | (b & 0x7F)
+    return val
 
 
 def scrub_image(path: str, output_path: str | None = None) -> dict[str, Any]:
@@ -17,10 +52,7 @@ def scrub_image(path: str, output_path: str | None = None) -> dict[str, Any]:
     import piexif
 
     path = str(path)
-    if output_path is None:
-        stem = Path(path).stem
-        suffix = Path(path).suffix
-        output_path = f"{stem}_clean{suffix}"
+    output_path = _scrub_path(path, output_path)
 
     try:
         piexif.remove(path, output_path)
@@ -44,10 +76,7 @@ def scrub_pdf(path: str, output_path: str | None = None) -> dict[str, Any]:
     from PyPDF2 import PdfReader, PdfWriter
 
     path = str(path)
-    if output_path is None:
-        stem = Path(path).stem
-        suffix = Path(path).suffix
-        output_path = f"{stem}_clean{suffix}"
+    output_path = _scrub_path(path, output_path)
 
     try:
         reader = PdfReader(path)
@@ -78,10 +107,7 @@ def scrub_pdf(path: str, output_path: str | None = None) -> dict[str, Any]:
 def scrub_office(path: str, output_path: str | None = None) -> dict[str, Any]:
     """Remove core properties from Office documents."""
     path = str(path)
-    if output_path is None:
-        stem = Path(path).stem
-        suffix = Path(path).suffix
-        output_path = f"{stem}_clean{suffix}"
+    output_path = _scrub_path(path, output_path)
 
     try:
         import shutil
@@ -126,10 +152,7 @@ def scrub_audio(path: str, output_path: str | None = None) -> dict[str, Any]:
     import shutil
 
     path = str(path)
-    if output_path is None:
-        stem = Path(path).stem
-        suffix = Path(path).suffix
-        output_path = f"{stem}_clean{suffix}"
+    output_path = _scrub_path(path, output_path)
 
     shutil.copy2(path, output_path)
 
@@ -159,29 +182,10 @@ def scrub_audio(path: str, output_path: str | None = None) -> dict[str, Any]:
     }
 
 
-def _scrub_mp3_manual(path: str) -> None:
-    """Remove ID3v2 tag from MP3 file."""
-    with open(path, "rb") as f:
-        header = f.read(10)
-        if header[:3] != b"ID3":
-            return
-        size = _read_syncsafe_int(f.read(4))
-        tag_size = 10 + size
-
-    with open(path, "rb") as f:
-        data = f.read()
-
-    with open(path, "wb") as f:
-        f.write(data[tag_size:])
-
-
 def scrub_video(path: str, output_path: str | None = None) -> dict[str, Any]:
     """Strip metadata from video files (MP4)."""
     path = str(path)
-    if output_path is None:
-        stem = Path(path).stem
-        suffix = Path(path).suffix
-        output_path = f"{stem}_clean{suffix}"
+    output_path = _scrub_path(path, output_path)
 
     shutil.copy2(path, output_path)
 
@@ -207,13 +211,8 @@ def scrub_video(path: str, output_path: str | None = None) -> dict[str, Any]:
 
 def scrub_text(path: str, output_path: str | None = None) -> dict[str, Any]:
     """Strip metadata comments from text files."""
-    import re
-
     path = str(path)
-    if output_path is None:
-        stem = Path(path).stem
-        suffix = Path(path).suffix
-        output_path = f"{stem}_clean{suffix}"
+    output_path = _scrub_path(path, output_path)
 
     try:
         with open(path, "r", encoding="utf-8", errors="replace") as f:
@@ -248,10 +247,7 @@ def scrub_text(path: str, output_path: str | None = None) -> dict[str, Any]:
 def scrub_zip(path: str, output_path: str | None = None) -> dict[str, Any]:
     """Clear ZIP comment from archive."""
     path = str(path)
-    if output_path is None:
-        stem = Path(path).stem
-        suffix = Path(path).suffix
-        output_path = f"{stem}_clean{suffix}"
+    output_path = _scrub_path(path, output_path)
 
     try:
         import shutil
@@ -273,14 +269,6 @@ def scrub_zip(path: str, output_path: str | None = None) -> dict[str, Any]:
         "status": "scrubbed",
         "metadata_removed": "ZIP comment",
     }
-
-
-def _read_syncsafe_int(data: bytes) -> int:
-    """Read a 4-byte synchsafe integer."""
-    val = 0
-    for b in data:
-        val = (val << 7) | (b & 0x7F)
-    return val
 
 
 def scrub_file(path: str, output_path: str | None = None) -> dict[str, Any]:
