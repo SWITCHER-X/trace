@@ -1,0 +1,332 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Trace - File Metadata & Privacy Inspector</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+        }
+        .card {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+            padding: 32px;
+            margin-bottom: 24px;
+        }
+        h1 {
+            color: white;
+            margin-bottom: 8px;
+        }
+        .subtitle {
+            color: rgba(255,255,255,0.9);
+            margin-bottom: 24px;
+        }
+        h2 { color: #333; margin-bottom: 16px; font-size: 1.25rem; }
+        .drop-zone {
+            border: 3px dashed #764ba2;
+            border-radius: 12px;
+            padding: 48px 24px;
+            text-align: center;
+            margin-bottom: 24px;
+            cursor: pointer;
+            transition: all 0.3s;
+            background: #f8f9ff;
+        }
+        .drop-zone:hover {
+            border-color: #667eea;
+            background: #f0f2ff;
+        }
+        .drop-zone.dragover {
+            border-color: #667eea;
+            background: #e8eaff;
+        }
+        .drop-zone input[type="file"] {
+            display: none;
+        }
+        .btn {
+            background: #764ba2;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 1rem;
+            transition: background 0.3s;
+        }
+        .btn:hover { background: #667eea; }
+        .btn.secondary { background: #6c757d; }
+        .btn.secondary:hover { background: #5a6268; }
+        .btn.success { background: #28a745; }
+        .btn.success:hover { background: #218838; }
+        .result {
+            margin-top: 24px;
+            padding: 20px;
+            border-radius: 8px;
+            display: none;
+        }
+        .result.high { background: #f8d7da; border: 1px solid #f5c6cb; color: #721c24; }
+        .result.medium { background: #fff3cd; border: 1px solid #ffeeba; color: #856404; }
+        .result.low { background: #d1ecf1; border: 1px solid #bee5eb; color: #0c5460; }
+        .result.none { background: #d4edda; border: 1px solid #c3e6cb; color: #155724; }
+        .metadata-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 8px 0;
+            border-bottom: 1px solid #eee;
+            font-size: 0.9rem;
+        }
+        .risky {
+            color: #dc3545;
+            font-weight: bold;
+        }
+        .warning-item {
+            display: flex;
+            align-items: flex-start;
+            gap: 8px;
+            margin: 8px 0;
+            color: #721c24;
+        }
+        .warning-item::before { content: "⚠"; }
+        .batch-results {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 16px;
+            margin-top: 16px;
+        }
+        .batch-card {
+            background: white;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            padding: 16px;
+        }
+        .batch-card.high { border-left: 4px solid #dc3545; }
+        .batch-card.medium { border-left: 4px solid #ffc107; }
+        .batch-card.low { border-left: 4px solid #17a2b8; }
+        .batch-card.none { border-left: 4px solid #28a745; }
+        .hidden { display: none; }
+        .spinner {
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #764ba2;
+            border-radius: 50%;
+            width: 24px;
+            height: 24px;
+            animation: spin 1s linear infinite;
+            display: inline-block;
+            margin-right: 8px;
+        }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        .file-info {
+            font-size: 0.85rem;
+            color: #666;
+            margin-top: 8px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="card" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white;">
+            <h1>🔍 Trace</h1>
+            <p class="subtitle">Universal File Metadata & Privacy Inspector</p>
+            <p style="font-size: 0.9rem; opacity: 0.9;">Scan files for hidden metadata before you share. Everything runs locally — no uploads to external servers.</p>
+        </div>
+
+        <div class="card">
+            <h2>Single File</h2>
+            <div class="drop-zone" id="dropZone">
+                <p>Drag & drop a file here, or <strong>click to browse</strong></p>
+                <input type="file" id="fileInput" multiple>
+            </div>
+            <button class="btn" onclick="document.getElementById('fileInput').click()">Choose File</button>
+            <div id="singleResult" class="result hidden"></div>
+        </div>
+
+        <div class="card">
+            <h2>Batch Scan</h2>
+            <div class="drop-zone" id="batchDropZone">
+                <p>Drag & drop multiple files, or <strong>click to browse</strong></p>
+                <input type="file" id="batchFileInput" multiple>
+            </div>
+            <button class="btn" onclick="document.getElementById('batchFileInput').click()">Choose Multiple Files</button>
+            <div id="batchResult" class="hidden"></div>
+        </div>
+    </div>
+
+    <script>
+        const dropZone = document.getElementById('dropZone');
+        const fileInput = document.getElementById('fileInput');
+        const singleResult = document.getElementById('singleResult');
+
+        const batchDropZone = document.getElementById('batchDropZone');
+        const batchFileInput = document.getElementById('batchFileInput');
+        const batchResult = document.getElementById('batchResult');
+
+        // Single file drag & drop
+        ['dragenter', 'dragover'].forEach(eventName => {
+            dropZone.addEventListener(eventName, (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                dropZone.classList.add('dragover');
+            }, false);
+        });
+
+        ['dragleave', 'drop'].forEach(eventName => {
+            dropZone.addEventListener(eventName, (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                dropZone.classList.remove('dragover');
+            }, false);
+        });
+
+        dropZone.addEventListener('drop', (e) => {
+            const files = e.dataTransfer.files;
+            if (files.length) handleFile(files[0]);
+        }, false);
+
+        fileInput.addEventListener('change', (e) => {
+            if (e.target.files.length) handleFile(e.target.files[0]);
+        });
+
+        // Batch drag & drop
+        ['dragenter', 'dragover'].forEach(eventName => {
+            batchDropZone.addEventListener(eventName, (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                batchDropZone.classList.add('dragover');
+            }, false);
+        });
+
+        ['dragleave', 'drop'].forEach(eventName => {
+            batchDropZone.addEventListener(eventName, (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                batchDropZone.classList.remove('dragover');
+            }, false);
+        });
+
+        batchDropZone.addEventListener('drop', (e) => {
+            const files = Array.from(e.dataTransfer.files);
+            handleBatch(files);
+        }, false);
+
+        batchFileInput.addEventListener('change', (e) => {
+            if (e.target.files.length) handleBatch(Array.from(e.target.files));
+        });
+
+        async function handleFile(file) {
+            const formData = new FormData();
+            formData.append('file', file);
+
+            singleResult.style.display = 'block';
+            singleResult.className = 'result';
+            singleResult.innerHTML = '<div class="spinner"></div> Scanning...';
+
+            try {
+                const response = await fetch('/api/scan', { method: 'POST', body: formData });
+                const data = await response.json();
+
+                if (data.error) {
+                    singleResult.className = 'result high';
+                    singleResult.innerHTML = `<strong>Error:</strong> ${data.error}`;
+                    return;
+                }
+
+                renderSingleResult(data);
+            } catch (err) {
+                singleResult.className = 'result high';
+                singleResult.innerHTML = `<strong>Error:</strong> ${err.message}`;
+            }
+        }
+
+        async function handleBatch(files) {
+            const formData = new FormData();
+            files.forEach(f => formData.append('files', f));
+
+            batchResult.style.display = 'block';
+            batchResult.innerHTML = '<div class="spinner"></div> Scanning batch...';
+
+            try {
+                const response = await fetch('/api/batch', { method: 'POST', body: formData });
+                const data = await response.json();
+
+                renderBatchResult(data);
+            } catch (err) {
+                batchResult.innerHTML = `<strong>Error:</strong> ${err.message}`;
+            }
+        }
+
+        function renderSingleResult(data) {
+            const riskyBadge = data.risk_level === 'high' ? 'HIGH' : data.risk_level === 'medium' ? 'MEDIUM' : data.risk_level === 'low' ? 'LOW' : 'NONE';
+            singleResult.className = `result ${data.risk_level}`;
+
+            let metadataHtml = '';
+            if (data.metadata && Object.keys(data.metadata).length > 0) {
+                metadataHtml = '<h3>Metadata Found:</h3>';
+                for (const [key, value] of Object.entries(data.metadata)) {
+                    const isRisky = key.toLowerCase().includes('gps') ||
+                                    key.toLowerCase().includes('author') ||
+                                    key.toLowerCase().includes('creator') ||
+                                    key.toLowerCase().includes('model') ||
+                                    key.toLowerCase().includes('make') ||
+                                    key.toLowerCase().includes('artist');
+                    metadataHtml += `
+                        <div class="metadata-item">
+                            <span>${key}${isRisky ? ' <span class="risky">⚠</span>' : ''}</span>
+                            <span>${escapeHtml(value)}</span>
+                        </div>
+                    `;
+                }
+            } else {
+                metadataHtml = '<p>No metadata found.</p>';
+            }
+
+            let warningsHtml = '';
+            if (data.warnings && data.warnings.length > 0) {
+                warningsHtml = '<h3>Warnings:</h3>' + data.warnings.map(w => `<div class="warning-item">${escapeHtml(w)}</div>`).join('');
+            }
+
+            singleResult.innerHTML = `
+                <div class="file-info">${data.filename} • ${(data.size / 1024).toFixed(1)} KB</div>
+                <div style="margin: 12px 0;"><strong>Risk Level:</strong> <span class="risky">${riskyBadge}</span></div>
+                ${warningsHtml}
+                ${metadataHtml}
+            `;
+        }
+
+        function renderBatchResult(data) {
+            batchResult.innerHTML = `
+                <h3>Results: ${data.total} files scanned, ${data.risky} with risky metadata</h3>
+                <div class="batch-results">
+                    ${data.results.map(r => {
+                        const risk = r.risk_level || 'unknown';
+                        const metadataCount = r.metadata ? Object.keys(r.metadata).length : 0;
+                        return `
+                            <div class="batch-card ${risk}">
+                                <div style="font-size: 0.8rem; color: #666; margin-bottom: 4px;">${r.filename}</div>
+                                <div style="font-weight: bold;">${risk.toUpperCase()}</div>
+                                <div style="font-size: 0.8rem; margin-top: 4px;">${metadataCount} metadata fields</div>
+                                ${r.error ? `<div style="color: #dc3545; font-size: 0.75rem;">${r.error}</div>` : ''}
+                            </div>
+                        `;
+                    }).join('')}
+                </div>
+            `;
+        }
+
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+    </script>
+</body>
+</html>

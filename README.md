@@ -37,9 +37,12 @@ Trace fixes that. One command. Local only. Cross-platform.
 | **Document inspector** | Author name, company, template path, revision history in PDFs/Office docs |
 | **Video metadata** | Device info, creation software in MP4/MOV |
 | **Risk scoring** | High/Medium/Low/None based on personal identifier detection |
-| **One-click scrub** | Strips identifying metadata before you share (Phase 2) |
-| **Batch mode** | Scan entire folders before uploading to social media |
-| **JSON output** | Machine-readable for scripting and pipelines |
+|| **One-click scrub** | Strips identifying metadata before you share ||
+|| **Batch mode** | Scan entire folders before uploading to social media ||
+|| **JSON output** | Machine-readable for scripting and pipelines ||
+|| **Web GUI** | Drag-and-drop browser interface (`trace-web`) ||
+|| **Unit tests** | Full test suite with pytest ||
+|| **CI/CD** | GitHub Actions workflow for automated testing ||
 
 ## Install
 
@@ -67,8 +70,17 @@ trace scan photo.jpg --json
 # Scan an entire folder
 trace batch ./downloads/
 
-# Scan and strip metadata (coming in Phase 2)
+# Scan and strip metadata
 trace scrub photo.jpg
+
+# Launch web GUI
+trace-web
+# → http://localhost:5000
+```
+
+### Web GUI
+
+Run `trace-web` and open http://localhost:5000 in your browser. Drag and drop files to scan them instantly, or scrub metadata with one click.
 ```
 
 ## Supported Formats
@@ -80,6 +92,17 @@ trace scrub photo.jpg
 ## Privacy
 
 Trace runs 100% locally. No files are uploaded. No network connections are made. Your data never leaves your machine.
+
+## Testing
+
+```bash
+pip install -e ".[dev]"
+python3 -m pytest tests/ -v
+```
+
+## CI/CD
+
+GitHub Actions workflow runs tests on every push and pull request.
 
 ## License
 

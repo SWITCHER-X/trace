@@ -26,9 +26,11 @@ classifiers = [
 dev = ["pytest", "black", "flake8"]
 exif = ["piexif>=1.1.3"]
 pdf = ["PyPDF2>=3.0.0"]
+web = ["flask>=3.0.0"]
 
 [project.scripts]
 trace = "trace.cli:main"
+trace-web = "trace.web:main"
 
 [tool.setuptools.packages.find]
 where = ["."]
