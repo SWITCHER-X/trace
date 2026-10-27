@@ -158,9 +158,9 @@ def main():
     """Run the web GUI."""
     print("=" * 60)
     print("  Trace Web GUI")
-    print("  Open: http://localhost:5000")
+    print("  Open: http://localhost:5001")
     print("=" * 60)
-    app.run(host="0.0.0.0", port=5000, debug=True)
+    app.run(host="0.0.0.0", port=5001, debug=True)
 
 
 if __name__ == "__main__":

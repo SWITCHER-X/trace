@@ -250,6 +250,7 @@
             display: flex;
             flex-direction: column;
             gap: 24px;
+            max-height: 100%;
         }
 
         .drop-zone {
@@ -303,6 +304,8 @@
             border-radius: var(--radius-lg);
             overflow: hidden;
             display: none;
+            max-height: 100%;
+            overflow-y: auto;
         }
 
         .result-card.show {
