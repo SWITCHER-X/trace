@@ -3,323 +3,938 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Trace - File Metadata & Privacy Inspector</title>
+    <title>Trace — File Metadata & Privacy Inspector</title>
     <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
+        /* ========== DESIGN SYSTEM ========== */
+        :root {
+            --ink: #0f172a;
+            --ink-soft: #334155;
+            --muted: #64748b;
+            --border: #e2e8f0;
+            --surface: #ffffff;
+            --surface-soft: #f8fafc;
+            --accent: #0ea5e9;
+            --accent-soft: #f0f9ff;
+            --risk-high: #dc2626;
+            --risk-high-soft: #fef2f2;
+            --risk-med: #f59e0b;
+            --risk-med-soft: #fffbeb;
+            --risk-low: #2563eb;
+            --risk-low-soft: #eff6ff;
+            --risk-none: #16a34a;
+            --risk-none-soft: #f0fdf4;
+            --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+            --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+            --radius: 8px;
+            --radius-lg: 12px;
+            --transition: 150ms cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        html {
+            scroll-padding-top: 80px;
+        }
+
         body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            min-height: 100vh;
-            padding: 20px;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            font-size: 14px;
+            line-height: 1.5;
+            color: var(--ink);
+            background: #f1f5f9;
+            -webkit-font-smoothing: antialiased;
         }
-        .container {
-            max-width: 800px;
-            margin: 0 auto;
+
+        /* ========== LAYOUT ========== */
+        .app {
+            display: grid;
+            grid-template-columns: 280px 1fr;
+            grid-template-rows: auto 1fr;
+            height: 100vh;
+            overflow: hidden;
         }
-        .card {
-            background: white;
-            border-radius: 12px;
-            box-shadow: 0 10px 40px rgba(0,0,0,0.2);
-            padding: 32px;
-            margin-bottom: 24px;
+
+        header {
+            grid-column: 1 / -1;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            background: var(--surface);
+            border-bottom: 1px solid var(--border);
+            padding: 14px 24px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
         }
-        h1 {
+
+        .brand {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-size: 18px;
+            font-weight: 700;
+            color: var(--ink);
+            text-decoration: none;
+        }
+
+        .brand .mark {
+            width: 32px;
+            height: 32px;
+            border-radius: var(--radius);
+            background: linear-gradient(135deg, var(--accent), #0284c7);
+            display: flex;
+            align-items: center;
+            justify-content: center;
             color: white;
+            font-weight: 800;
+            font-size: 16px;
+        }
+
+        .brand .wordmark {
+            font-size: 18px;
+            font-weight: 700;
+            letter-spacing: -0.02em;
+        }
+
+        .brand .tagline {
+            font-size: 11px;
+            color: var(--muted);
+            margin-left: 4px;
+        }
+
+        .nav {
+            display: flex;
+            gap: 16px;
+        }
+
+        .nav-btn {
+            background: none;
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 8px 14px;
+            font-size: 13px;
+            color: var(--ink-soft);
+            cursor: pointer;
+            transition: all var(--transition);
+        }
+
+        .nav-btn:hover {
+            border-color: var(--muted);
+            background: var(--surface-soft);
+        }
+
+        .nav-btn.active {
+            border-color: var(--accent);
+            background: var(--accent-soft);
+            color: var(--accent);
+        }
+
+        /* ========== SIDEBAR ========== */
+        aside {
+            background: var(--surface);
+            border-right: 1px solid var(--border);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .sidebar-section {
+            padding: 20px 24px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .sidebar-section:last-child {
+            border-bottom: none;
+        }
+
+        .section-title {
+            font-size: 11px;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            color: var(--muted);
+            margin-bottom: 12px;
+            font-weight: 600;
+        }
+
+        .recent-list {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .recent-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 10px 12px;
+            border-radius: var(--radius);
+            cursor: pointer;
+            transition: background var(--transition);
+            font-size: 13px;
+        }
+
+        .recent-item:hover {
+            background: var(--surface-soft);
+        }
+
+        .recent-item.active {
+            background: var(--accent-soft);
+            border-left: 3px solid var(--accent);
+            padding-left: 9px;
+        }
+
+        .recent-item .icon {
+            width: 32px;
+            height: 32px;
+            border-radius: 6px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+
+        .recent-item.image .icon { background: #dbeafe; color: #1d4ed8; }
+        .recent-item.pdf .icon { background: #fee2e2; color: #991b1b; }
+        .recent-item.docx .icon { background: #dcfce7; color: #166534; }
+
+        .recent-item .info {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .recent-item .name {
+            font-size: 12px;
+            font-weight: 500;
+            color: var(--ink);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .recent-item .risk {
+            font-size: 10px;
+            font-weight: 600;
+            padding: 2px 6px;
+            border-radius: 999px;
+            white-space: nowrap;
+        }
+
+        .recent-item .risk.high { background: var(--risk-high-soft); color: var(--risk-high); }
+        .recent-item .risk.medium { background: var(--risk-med-soft); color: var(--risk-med); }
+        .recent-item .risk.low { background: var(--risk-low-soft); color: var(--risk-low); }
+        .recent-item .risk.none { background: var(--risk-none-soft); color: var(--risk-none); }
+
+        .empty-state {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 40px 24px;
+            color: var(--muted);
+            font-size: 13px;
+        }
+
+        .empty-state .icon {
+            font-size: 32px;
+            margin-bottom: 12px;
+            opacity: 0.5;
+        }
+
+        /* ========== MAIN PANEL ========== */
+        main {
+            background: #f1f5f9;
+            overflow-y: auto;
+            padding: 32px;
+            display: flex;
+            flex-direction: column;
+            gap: 24px;
+        }
+
+        .drop-zone {
+            background: var(--surface);
+            border: 2px dashed var(--border);
+            border-radius: var(--radius-lg);
+            padding: 56px 40px;
+            text-align: center;
+            cursor: pointer;
+            transition: all var(--transition);
+            position: relative;
+        }
+
+        .drop-zone:hover {
+            border-color: var(--accent);
+            background: var(--accent-soft);
+        }
+
+        .drop-zone.dragover {
+            border-color: var(--accent);
+            background: var(--accent-soft);
+            transform: scale(0.98);
+        }
+
+        .drop-zone .icon {
+            font-size: 48px;
+            margin-bottom: 16px;
+            opacity: 0.5;
+        }
+
+        .drop-zone h2 {
+            font-size: 20px;
+            font-weight: 600;
+            color: var(--ink);
             margin-bottom: 8px;
         }
-        .subtitle {
-            color: rgba(255,255,255,0.9);
-            margin-bottom: 24px;
+
+        .drop-zone p {
+            color: var(--muted);
+            font-size: 14px;
         }
-        h2 { color: #333; margin-bottom: 16px; font-size: 1.25rem; }
-        .drop-zone {
-            border: 3px dashed #764ba2;
-            border-radius: 12px;
-            padding: 48px 24px;
-            text-align: center;
-            margin-bottom: 24px;
-            cursor: pointer;
-            transition: all 0.3s;
-            background: #f8f9ff;
-        }
-        .drop-zone:hover {
-            border-color: #667eea;
-            background: #f0f2ff;
-        }
-        .drop-zone.dragover {
-            border-color: #667eea;
-            background: #e8eaff;
-        }
+
         .drop-zone input[type="file"] {
             display: none;
         }
-        .btn {
-            background: #764ba2;
-            color: white;
-            border: none;
-            padding: 12px 24px;
-            border-radius: 6px;
-            cursor: pointer;
-            font-size: 1rem;
-            transition: background 0.3s;
-        }
-        .btn:hover { background: #667eea; }
-        .btn.secondary { background: #6c757d; }
-        .btn.secondary:hover { background: #5a6268; }
-        .btn.success { background: #28a745; }
-        .btn.success:hover { background: #218838; }
-        .result {
-            margin-top: 24px;
-            padding: 20px;
-            border-radius: 8px;
+
+        /* ========== RESULT CARD ========== */
+        .result-card {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-lg);
+            overflow: hidden;
             display: none;
         }
-        .result.high { background: #f8d7da; border: 1px solid #f5c6cb; color: #721c24; }
-        .result.medium { background: #fff3cd; border: 1px solid #ffeeba; color: #856404; }
-        .result.low { background: #d1ecf1; border: 1px solid #bee5eb; color: #0c5460; }
-        .result.none { background: #d4edda; border: 1px solid #c3e6cb; color: #155724; }
-        .metadata-item {
+
+        .result-card.show {
+            display: block;
+            animation: slideIn var(--transition);
+        }
+
+        @keyframes slideIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .result-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 20px 24px;
+            border-bottom: 1px solid var(--border);
+            background: var(--surface-soft);
+        }
+
+        .result-file-info {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .result-file-name {
+            font-size: 15px;
+            font-weight: 600;
+            color: var(--ink);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .result-file-meta {
+            font-size: 12px;
+            color: var(--muted);
+            margin-top: 4px;
+        }
+
+        .risk-badge {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 16px;
+            border-radius: var(--radius);
+            font-size: 13px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+        }
+
+        .risk-badge.high { background: var(--risk-high-soft); color: var(--risk-high); border: 1px solid #fecaca; }
+        .risk-badge.medium { background: var(--risk-med-soft); color: var(--risk-med); border: 1px solid #fed7aa; }
+        .risk-badge.low { background: var(--risk-low-soft); color: var(--risk-low); border: 1px solid #bfdbfe; }
+        .risk-badge.none { background: var(--risk-none-soft); color: var(--risk-none); border: 1px solid #bbf7d0; }
+
+        .risk-badge .dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: currentColor;
+            animation: pulse 2s infinite;
+        }
+
+        .risk-badge.high .dot { animation: none; }
+        .risk-badge.medium .dot { animation: none; }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        .result-body {
+            display: grid;
+            grid-template-columns: 340px 1fr;
+            gap: 24px;
+            padding: 24px;
+        }
+
+        .preview {
+            background: var(--surface-soft);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 16px;
+            min-height: 200px;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .preview-label {
+            font-size: 11px;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            color: var(--muted);
+            font-weight: 600;
+        }
+
+        .preview-image {
+            width: 100%;
+            height: 160px;
+            border-radius: var(--radius);
+            background: var(--surface);
+            border: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+        }
+
+        .preview-image img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .preview-placeholder {
+            color: var(--muted);
+            font-size: 12px;
+        }
+
+        .metadata-section {
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+
+        .metadata-group {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .group-title {
+            font-size: 11px;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            color: var(--muted);
+            font-weight: 600;
+            padding-bottom: 4px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .meta-item {
             display: flex;
             justify-content: space-between;
             padding: 8px 0;
-            border-bottom: 1px solid #eee;
-            font-size: 0.9rem;
+            border-bottom: 1px solid var(--border);
+            font-size: 13px;
         }
-        .risky {
-            color: #dc3545;
-            font-weight: bold;
+
+        .meta-item:last-child {
+            border-bottom: none;
         }
-        .warning-item {
+
+        .meta-key {
+            color: var(--muted);
+            font-weight: 500;
+        }
+
+        .meta-value {
+            color: var(--ink);
+            font-weight: 500;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .meta-value.risky {
+            color: var(--risk-high);
+        }
+
+        .meta-actions {
+            margin-top: 24px;
+            padding-top: 20px;
+            border-top: 1px solid var(--border);
             display: flex;
-            align-items: flex-start;
-            gap: 8px;
-            margin: 8px 0;
-            color: #721c24;
+            gap: 12px;
         }
-        .warning-item::before { content: "⚠"; }
-        .batch-results {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-            gap: 16px;
-            margin-top: 16px;
+
+        .btn {
+            padding: 10px 20px;
+            border-radius: var(--radius);
+            border: 1px solid var(--border);
+            background: var(--surface);
+            color: var(--ink);
+            font-size: 13px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all var(--transition);
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
         }
-        .batch-card {
-            background: white;
-            border: 1px solid #ddd;
-            border-radius: 8px;
-            padding: 16px;
+
+        .btn:hover {
+            border-color: var(--muted);
+            background: var(--surface-soft);
         }
-        .batch-card.high { border-left: 4px solid #dc3545; }
-        .batch-card.medium { border-left: 4px solid #ffc107; }
-        .batch-card.low { border-left: 4px solid #17a2b8; }
-        .batch-card.none { border-left: 4px solid #28a745; }
-        .hidden { display: none; }
-        .spinner {
-            border: 3px solid #f3f3f3;
-            border-top: 3px solid #764ba2;
-            border-radius: 50%;
-            width: 24px;
-            height: 24px;
-            animation: spin 1s linear infinite;
-            display: inline-block;
-            margin-right: 8px;
+
+        .btn.primary {
+            background: var(--ink);
+            color: white;
+            border-color: var(--ink);
         }
-        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
-        .file-info {
-            font-size: 0.85rem;
-            color: #666;
-            margin-top: 8px;
+
+        .btn.primary:hover {
+            background: #1e293b;
         }
+
+        .btn.secondary {
+            background: var(--surface);
+            color: var(--ink-soft);
+        }
+
+        .btn.danger {
+            background: var(--risk-high-soft);
+            color: var(--risk-high);
+            border-color: #fecaca;
+        }
+
+        .btn.danger:hover {
+            background: var(--risk-high);
+            color: white;
+        }
+
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .btn .icon {
+            font-size: 12px;
+        }
+
+        /* ========== EMPTY STATE ========== */
+        .empty-main {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 60vh;
+            color: var(--muted);
+            text-align: center;
+        }
+
+        .empty-main .icon {
+            font-size: 56px;
+            margin-bottom: 20px;
+            opacity: 0.4;
+        }
+
+        .empty-main h2 {
+            font-size: 20px;
+            color: var(--ink);
+            margin-bottom: 8px;
+            font-weight: 600;
+        }
+
+        .empty-main p {
+            color: var(--muted);
+            font-size: 14px;
+            max-width: 400px;
+        }
+
+        /* ========== RESPONSIVE ========== */
+        @media (max-width: 900px) {
+            .app {
+                grid-template-columns: 1fr;
+            }
+
+            aside {
+                display: none;
+            }
+
+            main {
+                padding: 20px;
+            }
+
+            .result-body {
+                grid-template-columns: 1fr;
+            }
+
+            header {
+                padding: 14px 16px;
+            }
+        }
+
+        /* ========== UTILITIES ========== */
+        .hidden { display: none !important; }
+        .text-center { text-align: center; }
+        .font-mono { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace; }
+        .text-sm { font-size: 12px; }
+        .text-lg { font-size: 16px; }
+        .mt-4 { margin-top: 16px; }
+        .flex { display: flex; }
+        .flex-col { flex-direction: column; }
+        .items-center { align-items: center; }
+        .gap-8 { gap: 8px; }
+        .gap-16 { gap: 16px; }
     </style>
 </head>
 <body>
-    <div class="container">
-        <div class="card" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white;">
-            <h1>🔍 Trace</h1>
-            <p class="subtitle">Universal File Metadata & Privacy Inspector</p>
-            <p style="font-size: 0.9rem; opacity: 0.9;">Scan files for hidden metadata before you share. Everything runs locally — no uploads to external servers.</p>
-        </div>
+    <div class="app">
+        <header>
+            <a href="#" class="brand">
+                <div class="mark">T</div>
+                <div>
+                    <div class="wordmark">Trace</div>
+                    <div class="tagline">Metadata & Privacy Inspector</div>
+                </div>
+            </a>
+            <nav class="nav">
+                <button class="nav-btn active" onclick="showTab('scan')">Scan</button>
+                <button class="nav-btn" onclick="showTab('history')">History</button>
+            </nav>
+        </header>
 
-        <div class="card">
-            <h2>Single File</h2>
-            <div class="drop-zone" id="dropZone">
-                <p>Drag & drop a file here, or <strong>click to browse</strong></p>
-                <input type="file" id="fileInput" multiple>
+        <aside>
+            <div class="sidebar-section">
+                <div class="section-title">Recent Scans</div>
+                <div class="recent-list" id="recentList">
+                    <div class="empty-state">
+                        <div class="icon">📁</div>
+                        <div>No recent scans</div>
+                    </div>
+                </div>
             </div>
-            <button class="btn" onclick="document.getElementById('fileInput').click()">Choose File</button>
-            <div id="singleResult" class="result hidden"></div>
-        </div>
+        </aside>
 
-        <div class="card">
-            <h2>Batch Scan</h2>
-            <div class="drop-zone" id="batchDropZone">
-                <p>Drag & drop multiple files, or <strong>click to browse</strong></p>
-                <input type="file" id="batchFileInput" multiple>
+        <main>
+            <!-- Scan Drop Zone -->
+            <div id="scanZone" class="drop-zone">
+                <div class="icon">📁</div>
+                <h2>Drop a file to scan</h2>
+                <p>Supports images, PDFs, and Office documents</p>
+                <input type="file" id="fileInput" multiple onchange="handleFileSelect(this)">
             </div>
-            <button class="btn" onclick="document.getElementById('batchFileInput').click()">Choose Multiple Files</button>
-            <div id="batchResult" class="hidden"></div>
-        </div>
+
+            <!-- Result Card -->
+            <div id="resultCard" class="result-card hidden">
+                <div class="result-header">
+                    <div class="result-file-info">
+                        <div class="result-file-name" id="resultName">—</div>
+                        <div class="result-file-meta" id="resultMeta">—</div>
+                    </div>
+                    <div class="risk-badge" id="riskBadge">
+                        <div class="dot"></div>
+                        <span id="riskText">—</span>
+                    </div>
+                </div>
+                <div class="result-body">
+                    <div class="preview">
+                        <div class="preview-label">Preview</div>
+                        <div class="preview-image" id="previewImage">
+                            <div class="preview-placeholder">No preview available</div>
+                        </div>
+                        <div class="preview-label" style="margin-top: 8px;">Actions</div>
+                        <div class="meta-actions" style="padding: 0; border: none;">
+                            <button class="btn primary" id="scrubBtn" onclick="scrubCurrentFile()">
+                                <span class="icon">🧹</span> Scrub Metadata
+                            </button>
+                            <button class="btn secondary" onclick="downloadCleanCopy()" id="downloadBtn" disabled>
+                                <span class="icon">⬇</span> Download Clean Copy
+                            </button>
+                        </div>
+                    </div>
+                    <div class="metadata-section">
+                        <div class="metadata-group">
+                            <div class="group-title">All Metadata</div>
+                            <div id="metadataList"></div>
+                        </div>
+                        <div class="metadata-group" id="warningsGroup" style="display: none;">
+                            <div class="group-title">Warnings</div>
+                            <div id="warningsList"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Empty Main -->
+            <div id="emptyMain" class="empty-main">
+                <div class="icon">📁</div>
+                <h2>Drop a file to begin</h2>
+                <p>Scan any image, PDF, or Office document to see hidden metadata and privacy risks.</p>
+            </div>
+        </main>
     </div>
 
     <script>
-        const dropZone = document.getElementById('dropZone');
+        // State
+        let currentFile = null;
+        let currentResult = null;
+        let recentScans = JSON.parse(localStorage.getItem('trace-recent') || '[]');
+
+        // Elements
         const fileInput = document.getElementById('fileInput');
-        const singleResult = document.getElementById('singleResult');
+        const scanZone = document.getElementById('scanZone');
+        const resultCard = document.getElementById('resultCard');
+        const emptyMain = document.getElementById('emptyMain');
+        const recentList = document.getElementById('recentList');
 
-        const batchDropZone = document.getElementById('batchDropZone');
-        const batchFileInput = document.getElementById('batchFileInput');
-        const batchResult = document.getElementById('batchResult');
-
-        // Single file drag & drop
-        ['dragenter', 'dragover'].forEach(eventName => {
-            dropZone.addEventListener(eventName, (e) => {
-                e.preventDefault();
-                e.stopPropagation();
-                dropZone.classList.add('dragover');
-            }, false);
+        // Drag & drop
+        scanZone.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            scanZone.classList.add('dragover');
         });
 
-        ['dragleave', 'drop'].forEach(eventName => {
-            dropZone.addEventListener(eventName, (e) => {
-                e.preventDefault();
-                e.stopPropagation();
-                dropZone.classList.remove('dragover');
-            }, false);
+        scanZone.addEventListener('dragleave', (e) => {
+            e.preventDefault();
+            scanZone.classList.remove('dragover');
         });
 
-        dropZone.addEventListener('drop', (e) => {
-            const files = e.dataTransfer.files;
-            if (files.length) handleFile(files[0]);
-        }, false);
+        scanZone.addEventListener('drop', (e) => {
+            e.preventDefault();
+            scanZone.classList.remove('dragover');
+            if (e.dataTransfer.files.length) {
+                handleFile(e.dataTransfer.files[0]);
+            }
+        });
+
+        scanZone.addEventListener('click', () => fileInput.click());
 
         fileInput.addEventListener('change', (e) => {
             if (e.target.files.length) handleFile(e.target.files[0]);
         });
 
-        // Batch drag & drop
-        ['dragenter', 'dragover'].forEach(eventName => {
-            batchDropZone.addEventListener(eventName, (e) => {
-                e.preventDefault();
-                e.stopPropagation();
-                batchDropZone.classList.add('dragover');
-            }, false);
-        });
-
-        ['dragleave', 'drop'].forEach(eventName => {
-            batchDropZone.addEventListener(eventName, (e) => {
-                e.preventDefault();
-                e.stopPropagation();
-                batchDropZone.classList.remove('dragover');
-            }, false);
-        });
-
-        batchDropZone.addEventListener('drop', (e) => {
-            const files = Array.from(e.dataTransfer.files);
-            handleBatch(files);
-        }, false);
-
-        batchFileInput.addEventListener('change', (e) => {
-            if (e.target.files.length) handleBatch(Array.from(e.target.files));
-        });
-
-        async function handleFile(file) {
+        function handleFile(file) {
             const formData = new FormData();
             formData.append('file', file);
 
-            singleResult.style.display = 'block';
-            singleResult.className = 'result';
-            singleResult.innerHTML = '<div class="spinner"></div> Scanning...';
+            showLoading();
 
-            try {
-                const response = await fetch('/api/scan', { method: 'POST', body: formData });
-                const data = await response.json();
-
+            fetch('/api/scan', {
+                method: 'POST',
+                body: formData
+            })
+            .then(res => res.json())
+            .then(data => {
                 if (data.error) {
-                    singleResult.className = 'result high';
-                    singleResult.innerHTML = `<strong>Error:</strong> ${data.error}`;
+                    showError(data.error);
                     return;
                 }
-
-                renderSingleResult(data);
-            } catch (err) {
-                singleResult.className = 'result high';
-                singleResult.innerHTML = `<strong>Error:</strong> ${err.message}`;
-            }
+                currentResult = data;
+                currentFile = file;
+                renderResult(data);
+                addToRecent(data);
+            })
+            .catch(err => {
+                showError(err.message);
+            });
         }
 
-        async function handleBatch(files) {
-            const formData = new FormData();
-            files.forEach(f => formData.append('files', f));
-
-            batchResult.style.display = 'block';
-            batchResult.innerHTML = '<div class="spinner"></div> Scanning batch...';
-
-            try {
-                const response = await fetch('/api/batch', { method: 'POST', body: formData });
-                const data = await response.json();
-
-                renderBatchResult(data);
-            } catch (err) {
-                batchResult.innerHTML = `<strong>Error:</strong> ${err.message}`;
-            }
+        function showLoading() {
+            emptyMain.style.display = 'none';
+            resultCard.classList.add('hidden');
+            resultCard.classList.remove('show');
         }
 
-        function renderSingleResult(data) {
-            const riskyBadge = data.risk_level === 'high' ? 'HIGH' : data.risk_level === 'medium' ? 'MEDIUM' : data.risk_level === 'low' ? 'LOW' : 'NONE';
-            singleResult.className = `result ${data.risk_level}`;
+        function showError(msg) {
+            emptyMain.style.display = 'none';
+            resultCard.classList.add('hidden');
+            resultCard.classList.remove('show');
+            alert('Error: ' + msg);
+        }
 
-            let metadataHtml = '';
-            if (data.metadata && Object.keys(data.metadata).length > 0) {
-                metadataHtml = '<h3>Metadata Found:</h3>';
-                for (const [key, value] of Object.entries(data.metadata)) {
-                    const isRisky = key.toLowerCase().includes('gps') ||
-                                    key.toLowerCase().includes('author') ||
-                                    key.toLowerCase().includes('creator') ||
-                                    key.toLowerCase().includes('model') ||
-                                    key.toLowerCase().includes('make') ||
-                                    key.toLowerCase().includes('artist');
-                    metadataHtml += `
-                        <div class="metadata-item">
-                            <span>${key}${isRisky ? ' <span class="risky">⚠</span>' : ''}</span>
-                            <span>${escapeHtml(value)}</span>
-                        </div>
-                    `;
-                }
+        function renderResult(data) {
+            emptyMain.style.display = 'none';
+            resultCard.classList.remove('hidden');
+            resultCard.classList.add('show');
+
+            // File info
+            document.getElementById('resultName').textContent = data.filename;
+            const sizeKB = (data.size / 1024).toFixed(1);
+            document.getElementById('resultMeta').textContent = sizeKB + ' KB';
+
+            // Risk badge
+            const riskBadge = document.getElementById('riskBadge');
+            const riskText = document.getElementById('riskText');
+            const riskDot = riskBadge.querySelector('.dot');
+            riskBadge.className = 'risk-badge ' + data.risk_level;
+            riskText.textContent = data.risk_level.toUpperCase();
+
+            // Metadata
+            const metadataList = document.getElementById('metadataList');
+            metadataList.innerHTML = '';
+            const warnings = data.warnings || [];
+            const warningsList = document.getElementById('warningsList');
+            warningsList.innerHTML = '';
+
+            let hasWarnings = false;
+
+            Object.entries(data.metadata || {}).forEach(([key, value]) => {
+                const isRisky = isRiskyField(key, value);
+                const item = document.createElement('div');
+                item.className = 'meta-item';
+                item.innerHTML = `
+                    <span class="meta-key">${escapeHtml(key)}</span>
+                    <span class="meta-value${isRisky ? ' risky' : ''}">${escapeHtml(value)}</span>
+                `;
+                metadataList.appendChild(item);
+                if (isRisky) hasWarnings = true;
+            });
+
+            if (!Object.keys(data.metadata || {}).length) {
+                metadataList.innerHTML = '<div class="meta-item"><span class="meta-key">—</span><span class="meta-value">No metadata found</span></div>';
+            }
+
+            // Warnings
+            if (warnings.length > 0) {
+                document.getElementById('warningsGroup').style.display = 'block';
+                warnings.forEach(w => {
+                    const item = document.createElement('div');
+                    item.className = 'warning-item';
+                    item.textContent = w;
+                    warningsList.appendChild(item);
+                });
             } else {
-                metadataHtml = '<p>No metadata found.</p>';
+                document.getElementById('warningsGroup').style.display = 'none';
             }
 
-            let warningsHtml = '';
-            if (data.warnings && data.warnings.length > 0) {
-                warningsHtml = '<h3>Warnings:</h3>' + data.warnings.map(w => `<div class="warning-item">${escapeHtml(w)}</div>`).join('');
+            // Preview
+            const previewImage = document.getElementById('previewImage');
+            previewImage.innerHTML = '';
+            if (data.filename.match(/\.(jpg|jpeg|png|gif|webp)$/i)) {
+                previewImage.innerHTML = '<div class="preview-placeholder">Image preview not available for uploaded files</div>';
+            } else {
+                previewImage.innerHTML = '<div class="preview-placeholder">Preview not available for this file type</div>';
             }
 
-            singleResult.innerHTML = `
-                <div class="file-info">${data.filename} • ${(data.size / 1024).toFixed(1)} KB</div>
-                <div style="margin: 12px 0;"><strong>Risk Level:</strong> <span class="risky">${riskyBadge}</span></div>
-                ${warningsHtml}
-                ${metadataHtml}
-            `;
+            // Reset scrub button
+            document.getElementById('scrubBtn').disabled = false;
+            document.getElementById('downloadBtn').disabled = true;
         }
 
-        function renderBatchResult(data) {
-            batchResult.innerHTML = `
-                <h3>Results: ${data.total} files scanned, ${data.risky} with risky metadata</h3>
-                <div class="batch-results">
-                    ${data.results.map(r => {
-                        const risk = r.risk_level || 'unknown';
-                        const metadataCount = r.metadata ? Object.keys(r.metadata).length : 0;
-                        return `
-                            <div class="batch-card ${risk}">
-                                <div style="font-size: 0.8rem; color: #666; margin-bottom: 4px;">${r.filename}</div>
-                                <div style="font-weight: bold;">${risk.toUpperCase()}</div>
-                                <div style="font-size: 0.8rem; margin-top: 4px;">${metadataCount} metadata fields</div>
-                                ${r.error ? `<div style="color: #dc3545; font-size: 0.75rem;">${r.error}</div>` : ''}
-                            </div>
-                        `;
-                    }).join('')}
+        function isRiskyField(key, value) {
+            const k = key.toLowerCase();
+            const v = String(value).toLowerCase();
+            const riskyKeys = ['gps', 'latitude', 'longitude', 'altitude', 'author', 'creator', 'lastmodifiedby', 'company', 'organization', 'cameraserial', 'lensserial', 'artist', 'copyright'];
+            if (riskyKeys.some(rk => k.includes(rk))) return true;
+            if (v.includes('@') || v.includes('http') || v.includes('gps')) return true;
+            return false;
+        }
+
+        function addToRecent(data) {
+            const entry = {
+                filename: data.filename,
+                risk_level: data.risk_level,
+                size: data.size,
+                time: Date.now()
+            };
+            recentScans = [entry, ...recentScans].slice(0, 10);
+            localStorage.setItem('trace-recent', JSON.stringify(recentScans));
+            renderRecentList();
+        }
+
+        function renderRecentList() {
+            if (recentScans.length === 0) {
+                recentList.innerHTML = '<div class="empty-state"><div class="icon">📁</div><div>No recent scans</div></div>';
+                return;
+            }
+            recentList.innerHTML = recentScans.map((item, i) => `
+                <div class="recent-item${i === 0 ? ' active' : ''}" onclick="loadRecent(${i})">
+                    <div class="icon ${item.filename.match(/\.(jpg|jpeg|png|gif|webp)$/i) ? 'image' : item.filename.match(/\.(pdf)$/i) ? 'pdf' : 'docx'}">
+                        ${getFileIcon(item.filename)}
+                    </div>
+                    <div class="info">
+                        <div class="name">${escapeHtml(item.filename)}</div>
+                        <div class="risk ${item.risk_level}">${item.risk_level}</div>
+                    </div>
                 </div>
-            `;
+            `).join('');
+        }
+
+        function getFileIcon(filename) {
+            const ext = filename.split('.').pop().toLowerCase();
+            if (['jpg', 'jpeg', 'png', 'gif', 'webp'].includes(ext)) return '🖼';
+            if (ext === 'pdf') return '📄';
+            if (['docx', 'xlsx', 'pptx'].includes(ext)) return '📊';
+            return '📎';
+        }
+
+        function loadRecent(index) {
+            const item = recentScans[index];
+            document.querySelectorAll('.recent-item').forEach((el, i) => {
+                el.classList.toggle('active', i === index);
+            });
+            alert('Re-scanning requires re-selecting the file. Please use the drop zone above.');
+        }
+
+        function scrubCurrentFile() {
+            if (!currentResult) return;
+
+            const btn = document.getElementById('scrubBtn');
+            btn.disabled = true;
+            btn.innerHTML = '<span class="icon">⏳</span> Scrubbing...';
+
+            const formData = new FormData();
+            formData.append('file', currentFile);
+
+            fetch('/api/scrub', {
+                method: 'POST',
+                body: formData
+            })
+            .then(res => {
+                if (!res.ok) throw new Error('Scrub failed');
+                return res.blob();
+            })
+            .then(blob => {
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = currentResult.filename.replace(/\.[^/.]+$/, '') + '_clean' + (currentResult.filename.match(/\.[^/.]+$/) || '');
+                a.click();
+                URL.revokeObjectURL(url);
+
+                document.getElementById('downloadBtn').disabled = false;
+                btn.innerHTML = '<span class="icon">✓</span> Scrubbed';
+                btn.classList.add('btn.secondary');
+                btn.classList.remove('btn.primary');
+                btn.disabled = true;
+            })
+            .catch(err => {
+                btn.disabled = false;
+                btn.innerHTML = '<span class="icon">🧹</span> Scrub Metadata';
+                alert('Scrub failed: ' + err.message);
+            });
+        }
+
+        function downloadCleanCopy() {
+            if (!currentResult) return;
+            alert('Clean copy has been downloaded.');
         }
 
         function escapeHtml(text) {
@@ -327,6 +942,14 @@
             div.textContent = text;
             return div.innerHTML;
         }
+
+        function showTab(tab) {
+            document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+            event.target.classList.add('active');
+        }
+
+        // Initialize
+        renderRecentList();
     </script>
 </body>
 </html>
