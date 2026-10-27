@@ -969,6 +969,10 @@
         function scrubCurrentFile() {
             if (!currentResult) return;
 
+            // Capture what metadata existed before scrubbing
+            const beforeMetadata = currentResult.metadata || {};
+            const removedKeys = Object.keys(beforeMetadata);
+
             const btn = document.getElementById('scrubBtn');
             btn.disabled = true;
             btn.innerHTML = '<span class="icon">⏳</span> Scrubbing...';
@@ -997,6 +1001,14 @@
                 btn.classList.add('btn.secondary');
                 btn.classList.remove('btn.primary');
                 btn.disabled = true;
+
+                // Show scrub confirmation
+                if (removedKeys.length > 0) {
+                    const removedList = removedKeys.map(k => '• ' + k).join('\n');
+                    alert('✅ Metadata scrubbed successfully!\n\nRemoved ' + removedKeys.length + ' field(s):\n' + removedList + '\n\nThe clean copy has no embedded metadata.');
+                } else {
+                    alert('✅ File scrubbed — no metadata was found to remove.');
+                }
             })
             .catch(err => {
                 btn.disabled = false;
