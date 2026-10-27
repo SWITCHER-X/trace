@@ -70,7 +70,7 @@ def _is_risky(key: str, value: Any) -> bool:
         "gps", "latitude", "longitude", "altitude",
         "author", "creator", "lastmodifiedby",
         "company", "organization",
-        "cameraserial", "lensserial",
+        "cameraserial", "lensserial", "make", "model",
         "artist", "copyright",
     ]
     k = key.lower()

@@ -19,13 +19,42 @@ jobs:
 
       - name: Install dependencies
         run: |
-          pip install -e .
-          pip install pytest pytest-cov piexif PyPDF2
+          pip install -e ".[dev]"
+          pip install piexif PyPDF2 mutagen
 
       - name: Run unit tests
         run: |
-          python3 -m pytest tests/ -v --cov=trace
+          python3 -m pytest tests/ -v --cov=tracemeta
+
+      - name: Security audit (bandit)
+        run: |
+          python3 -m bandit -r tracemeta/ -f json -o bandit-report.json || true
+
+      - name: Dependency check (safety)
+        run: |
+          python3 -m safety check --json --output safety-report.json || true
 
       - name: Lint Python files
         run: |
-          python3 -m py_compile trace/*.py tests/*.py
+          python3 -m py_compile tracemeta/**/*.py tests/*.py
+
+  security:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install security tools
+        run: pip install bandit safety
+
+      - name: Run bandit security audit
+        run: |
+          bandit -r tracemeta/ -ll || true
+
+      - name: Run safety dependency check
+        run: |
+          safety check || true
