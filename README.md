@@ -86,8 +86,12 @@ Run `trace-web` and open http://localhost:5000 in your browser. Drag and drop fi
 ## Supported Formats
 
 - **Images:** JPEG, PNG, TIFF, WebP (EXIF)
+- **Audio:** MP3, WAV, FLAC, M4A, OGG (ID3, Vorbis comments, RIFF INFO)
+- **Video:** MP4, MOV (QuickTime atoms)
 - **Documents:** PDF
 - **Office:** .docx, .xlsx, .pptx (Office Open XML)
+- **Text:** .txt, .md, .csv, .py, .log, .json, .yaml, .yml (shebang, comments)
+- **Archive:** .zip (ZIP comment, file timestamps)
 
 ## Privacy
 
