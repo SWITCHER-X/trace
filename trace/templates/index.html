@@ -596,6 +596,23 @@
             }
         }
 
+        .safety-card {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 16px;
+        }
+
+        .safety-tip {
+            margin-top: 8px;
+            padding: 8px 12px;
+            background: var(--surface-soft);
+            border-radius: var(--radius);
+            font-size: 12px;
+            color: var(--ink-soft);
+            border-left: 3px solid var(--accent);
+        }
+
         /* ========== UTILITIES ========== */
         .hidden { display: none !important; }
         .text-center { text-align: center; }
@@ -623,6 +640,7 @@
             <nav class="nav">
                 <button class="nav-btn active" onclick="showTab('scan')">Scan</button>
                 <button class="nav-btn" onclick="showTab('history')">History</button>
+                <button class="nav-btn" onclick="showTab('safety')">Safety Guide</button>
             </nav>
         </header>
 
@@ -694,6 +712,56 @@
                 <h2>Drop a file to begin</h2>
                 <p>Scan any image, PDF, or Office document to see hidden metadata and privacy risks.</p>
             </div>
+
+            <!-- Safety Guide -->
+            <div id="safetyTab" class="hidden">
+                <div class="sidebar-section" style="padding: 0;">
+                    <div class="section-title">Why Metadata Matters</div>
+                    <div class="safety-card">
+                        <h3 style="color: var(--ink); font-size: 16px; margin-bottom: 8px;">📍 GPS Coordinates</h3>
+                        <p style="font-size: 13px; color: var(--ink-soft); margin-bottom: 12px;">Photos can embed exact latitude/longitude. Attackers can determine your home, workplace, or frequent locations from a single image.</p>
+                        <div class="safety-tip">
+                            <strong>Protection:</strong> Scrub GPS EXIF before sharing photos online.
+                        </div>
+                    </div>
+
+                    <div class="safety-card" style="margin-top: 16px;">
+                        <h3 style="color: var(--ink); font-size: 16px; margin-bottom: 8px;">👤 Author &amp; Creator</h3>
+                        <p style="font-size: 13px; color: var(--ink-soft); margin-bottom: 12px;">PDFs and Office docs store your name, organization, and sometimes email. Spear-phishers use this to craft convincing targeted attacks.</p>
+                        <div class="safety-tip">
+                            <strong>Protection:</strong> Remove author metadata from documents before external sharing.
+                        </div>
+                    </div>
+
+                    <div class="safety-card" style="margin-top: 16px;">
+                        <h3 style="color: var(--ink); font-size: 16px; margin-bottom: 8px;">📱 Device Fingerprinting</h3>
+                        <p style="font-size: 13px; color: var(--ink-soft); margin-bottom: 12px;">Camera make/model and serial numbers link photos to a specific physical device. This enables cross-platform tracking.</p>
+                        <div class="safety-tip">
+                            <strong>Protection:</strong> Check the risk badge — HIGH means device-identifying data is present.
+                        </div>
+                    </div>
+
+                    <div class="safety-card" style="margin-top: 16px;">
+                        <h3 style="color: var(--ink); font-size: 16px; margin-bottom: 8px;">🕒 Timestamps</h3>
+                        <p style="font-size: 13px; color: var(--ink-soft); margin-bottom: 12px;">Creation and modification times reveal your activity patterns and can contradict alibis or establish timelines.</p>
+                        <div class="safety-tip">
+                            <strong>Protection:</strong> Scrub DateTime fields before publishing.
+                        </div>
+                    </div>
+
+                    <div style="margin-top: 24px; padding-top: 16px; border-top: 1px solid var(--border); background: var(--risk-none-soft); border-radius: var(--radius); padding: 16px;">
+                        <div class="section-title" style="margin-bottom: 12px;">🛡️ Quick Safety Checklist</div>
+                        <ul style="font-size: 13px; color: var(--ink-soft); line-height: 1.8; padding-left: 20px;">
+                            <li>Scan every file before sharing online</li>
+                            <li>Use the Scrub button to generate a clean copy</li>
+                            <li>Turn off location tagging in your camera app</li>
+                            <li>Review the risk badge — HIGH = remove immediately</li>
+                            <li>Keep personal and work devices separate</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
         </main>
     </div>
 
@@ -951,6 +1019,28 @@
         function showTab(tab) {
             document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
             event.target.classList.add('active');
+
+            // Hide all content sections
+            document.getElementById('scanZone').style.display = 'none';
+            document.getElementById('resultCard').style.display = 'none';
+            document.getElementById('emptyMain').style.display = 'none';
+            document.getElementById('safetyTab').style.display = 'none';
+
+            if (tab === 'scan') {
+                document.getElementById('scanZone').style.display = 'block';
+                if (currentResult) {
+                    document.getElementById('resultCard').style.display = 'block';
+                    document.getElementById('resultCard').classList.add('show');
+                } else {
+                    document.getElementById('emptyMain').style.display = 'flex';
+                }
+            } else if (tab === 'history') {
+                document.getElementById('emptyMain').style.display = 'flex';
+                document.getElementById('emptyMain').querySelector('h2').textContent = 'Scan History';
+                document.getElementById('emptyMain').querySelector('p').textContent = 'Recent scans appear here after you scan files.';
+            } else if (tab === 'safety') {
+                document.getElementById('safetyTab').style.display = 'block';
+            }
         }
 
         // Initialize
