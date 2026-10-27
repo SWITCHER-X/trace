@@ -36,6 +36,14 @@
             scroll-padding-top: 80px;
         }
 
+        @media (prefers-reduced-motion: reduce) {
+            *, *::before, *::after {
+                animation-duration: 0.01ms !important;
+                animation-iteration-count: 1 !important;
+                transition-duration: 0.01ms !important;
+            }
+        }
+
         body {
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
             font-size: 14px;
@@ -262,6 +270,22 @@
             cursor: pointer;
             transition: all var(--transition);
             position: relative;
+            overflow: hidden;
+        }
+
+        .drop-zone::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(135deg, var(--accent-soft), transparent);
+            opacity: 0;
+            transition: opacity var(--transition);
+            pointer-events: none;
+        }
+
+        .drop-zone:hover::before,
+        .drop-zone.dragover::before {
+            opacity: 1;
         }
 
         .drop-zone:hover {
@@ -279,6 +303,12 @@
             font-size: 48px;
             margin-bottom: 16px;
             opacity: 0.5;
+            transition: transform var(--transition), opacity var(--transition);
+        }
+
+        .drop-zone:hover .icon {
+            transform: translateY(-2px);
+            opacity: 0.7;
         }
 
         .drop-zone h2 {
@@ -295,6 +325,39 @@
 
         .drop-zone input[type="file"] {
             display: none;
+        }
+
+        .drop-zone .hint {
+            margin-top: 16px;
+            font-size: 11px;
+            color: var(--muted);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+
+        .kbd {
+            font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+            font-size: 10px;
+            padding: 2px 6px;
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 4px;
+            box-shadow: 0 1px 0 var(--border);
+        }
+
+        /* Loading skeleton */
+        .skeleton {
+            background: linear-gradient(90deg, var(--surface-soft) 25%, var(--border) 50%, var(--surface-soft) 75%);
+            background-size: 200% 100%;
+            animation: shimmer 1.5s infinite;
+            border-radius: 4px;
+        }
+
+        @keyframes shimmer {
+            0% { background-position: 200% 0; }
+            100% { background-position: -200% 0; }
         }
 
         /* ========== RESULT CARD ========== */
@@ -457,6 +520,8 @@
             padding: 8px 0;
             border-bottom: 1px solid var(--border);
             font-size: 13px;
+            gap: 12px;
+            align-items: center;
         }
 
         .meta-item:last-child {
@@ -466,6 +531,8 @@
         .meta-key {
             color: var(--muted);
             font-weight: 500;
+            flex-shrink: 0;
+            min-width: 140px;
         }
 
         .meta-value {
@@ -474,10 +541,73 @@
             white-space: nowrap;
             overflow: hidden;
             text-overflow: ellipsis;
+            flex: 1;
+            text-align: right;
+            font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+            font-size: 12px;
+            cursor: help;
+            position: relative;
         }
 
         .meta-value.risky {
             color: var(--risk-high);
+        }
+
+        .meta-value::after {
+            content: attr(title);
+            position: absolute;
+            bottom: 100%;
+            right: 0;
+            background: var(--ink);
+            color: white;
+            padding: 6px 10px;
+            border-radius: var(--radius);
+            font-size: 11px;
+            font-family: inherit;
+            white-space: normal;
+            max-width: 280px;
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity var(--transition), visibility var(--transition);
+            z-index: 10;
+            box-shadow: var(--shadow-md);
+        }
+
+        .meta-value:hover::after {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        .meta-copy {
+            flex-shrink: 0;
+            width: 28px;
+            height: 28px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: var(--radius);
+            background: transparent;
+            border: 1px solid transparent;
+            color: var(--muted);
+            cursor: pointer;
+            transition: all var(--transition);
+            opacity: 0;
+        }
+
+        .meta-item:hover .meta-copy {
+            opacity: 1;
+        }
+
+        .meta-copy:hover {
+            background: var(--surface-soft);
+            border-color: var(--border);
+            color: var(--ink);
+        }
+
+        .meta-copy.copied {
+            color: var(--risk-none);
+            background: var(--risk-none-soft);
+            border-color: #bbf7d0;
         }
 
         .meta-actions {
@@ -831,8 +961,31 @@
 
         function showLoading() {
             emptyMain.style.display = 'none';
-            resultCard.classList.add('hidden');
-            resultCard.classList.remove('show');
+            resultCard.classList.remove('hidden');
+            resultCard.classList.add('show');
+            resultCard.innerHTML = `
+                <div class="result-header">
+                    <div class="result-file-info">
+                        <div class="result-file-name skeleton" style="width: 200px; height: 20px;"></div>
+                        <div class="result-file-meta skeleton" style="width: 80px; height: 14px; margin-top: 4px;"></div>
+                    </div>
+                    <div class="risk-badge skeleton" style="width: 100px; height: 28px;"></div>
+                </div>
+                <div class="result-body">
+                    <div class="preview">
+                        <div class="preview-label skeleton" style="width: 60px; height: 12px;"></div>
+                        <div class="preview-image skeleton" style="height: 160px;"></div>
+                    </div>
+                    <div class="metadata-section">
+                        <div class="metadata-group">
+                            <div class="group-title skeleton" style="width: 100px; height: 12px;"></div>
+                            <div class="meta-item"><span class="meta-key skeleton" style="width: 120px; height: 14px;"></span><span class="meta-value skeleton" style="width: 150px; height: 14px;"></span></div>
+                            <div class="meta-item"><span class="meta-key skeleton" style="width: 120px; height: 14px;"></span><span class="meta-value skeleton" style="width: 150px; height: 14px;"></div>
+                            <div class="meta-item"><span class="meta-key skeleton" style="width: 120px; height: 14px;"></span><span class="meta-value skeleton" style="width: 150px; height: 14px;"></div>
+                        </div>
+                    </div>
+                </div>
+            `;
         }
 
         function showError(msg) {
@@ -872,12 +1025,29 @@
                 const isRisky = isRiskyField(key, value);
                 const item = document.createElement('div');
                 item.className = 'meta-item';
+                const escapedValue = escapeHtml(value);
                 item.innerHTML = `
                     <span class="meta-key">${escapeHtml(key)}</span>
-                    <span class="meta-value${isRisky ? ' risky' : ''}">${escapeHtml(value)}</span>
+                    <span class="meta-value${isRisky ? ' risky' : ''}" title="${escapedValue}">${escapedValue}</span>
+                    <button class="meta-copy" title="Copy value" data-value="${escapedValue}" aria-label="Copy ${escapeHtml(key)}">📋</button>
                 `;
                 metadataList.appendChild(item);
                 if (isRisky) hasWarnings = true;
+            });
+
+            // Add copy functionality
+            metadataList.querySelectorAll('.meta-copy').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    navigator.clipboard.writeText(btn.dataset.value).then(() => {
+                        btn.textContent = '✓';
+                        btn.classList.add('copied');
+                        setTimeout(() => {
+                            btn.textContent = '📋';
+                            btn.classList.remove('copied');
+                        }, 1500);
+                    });
+                });
             });
 
             if (!Object.keys(data.metadata || {}).length) {
@@ -1057,6 +1227,43 @@
 
         // Initialize
         renderRecentList();
+
+        // Keyboard shortcuts
+        document.addEventListener('keydown', (e) => {
+            if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+
+            if (e.key === 's' && (e.metaKey || e.ctrlKey)) {
+                e.preventDefault();
+                document.querySelector('.nav-btn[onclick*="scan"]').click();
+            }
+            if (e.key === 'h' && (e.metaKey || e.ctrlKey)) {
+                e.preventDefault();
+                document.querySelector('.nav-btn[onclick*="history"]').click();
+            }
+            if (e.key === 'g' && (e.metaKey || e.ctrlKey)) {
+                e.preventDefault();
+                document.querySelector('.nav-btn[onclick*="safety"]').click();
+            }
+            if (e.key === 'Escape') {
+                if (currentResult) {
+                    // Clear current result, go back to drop zone
+                    currentResult = null;
+                    currentFile = null;
+                    document.getElementById('resultCard').classList.add('hidden');
+                    document.getElementById('resultCard').classList.remove('show');
+                    document.getElementById('emptyMain').style.display = 'flex';
+                }
+            }
+        });
+
+        // Update drop zone hint with keyboard shortcuts
+        const dropZone = document.getElementById('scanZone');
+        if (dropZone && !dropZone.querySelector('.hint')) {
+            const hint = document.createElement('div');
+            hint.className = 'hint';
+            hint.innerHTML = `<kbd class="kbd">⌘</kbd>+<kbd class="kbd">S</kbd> Scan &nbsp; <kbd class="kbd">⌘</kbd>+<kbd class="kbd">H</kbd> History &nbsp; <kbd class="kbd">⌘</kbd>+<kbd class="kbd">G</kbd> Safety`;
+            dropZone.appendChild(hint);
+        }
     </script>
 </body>
 </html>
